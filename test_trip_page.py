@@ -92,7 +92,7 @@ class TripPageTest(unittest.TestCase):
 
         for text in (
             "세소코비치 스노클링",
-            "fuu cafe 점심 · 카페",
+            "카진호 우선 · fuu cafe 대안",
             "샤워 5분 ¥500",
             "500엔 동전",
             "파고가 높거나 시설 미운영 시",
@@ -134,6 +134,21 @@ class TripPageTest(unittest.TestCase):
             "https://m.blog.naver.com/khs5592/223542858374",
         ):
             self.assertIn(url, html)
+
+    def test_day_two_uses_kajinhou_with_a_strict_fuu_fallback(self):
+        html = Path("index.html").read_text(encoding="utf-8")
+        day_two = html.split('id="day2"', 1)[1].split('id="day3"', 1)[0]
+
+        for text in (
+            "카진호 우선 · fuu cafe 대안",
+            "11:40 이내 입장",
+            "11:05까지",
+            "오션블루 유료좌석은 생략",
+            "현금 결제만 가능",
+        ):
+            self.assertIn(text, day_two)
+        self.assertLess(day_two.index("카진호 우선"), day_two.index("<strong>츄라우미 수족관"))
+        self.assertNotIn("정규 일정에는 이동과 대기 시간이 부족해 넣지 않습니다", html)
 
     def test_recent_review_tips_are_attached_to_each_day(self):
         html = Path("index.html").read_text(encoding="utf-8")
