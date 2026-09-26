@@ -113,6 +113,28 @@ class TripPageTest(unittest.TestCase):
         ):
             self.assertIn(text, html)
 
+    def test_northern_tips_include_ocean_blue_and_meal_alternatives(self):
+        html = Path("index.html").read_text(encoding="utf-8")
+
+        for text in (
+            "오션블루 유료석 판단법",
+            "추가 ¥1,000",
+            "이용 50분",
+            "1인 1주문",
+            "14:10까지 입장 가능할 때만",
+            "나키진의 숲",
+            "카진호 피자",
+            "현금 결제만",
+            "북부 식사 플랜 B",
+        ):
+            self.assertIn(text, html)
+        for url in (
+            "https://oki-churaumi.jp/kr/area/restaurant/ocean-blue/",
+            "https://blog.naver.com/april611/224193030210",
+            "https://m.blog.naver.com/khs5592/223542858374",
+        ):
+            self.assertIn(url, html)
+
 
 if __name__ == "__main__":
     unittest.main()
