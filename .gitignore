@@ -1,0 +1,11 @@
+# Reservation screenshots and personal source material
+/flight_reserve.png
+/hotel_reserve-*.png
+/KakaoTalk_*.jpg
+
+# Generated/cache files
+/__pycache__/
+*.pyc
+
+# Uncompressed image sources
+/assets/*-v2.png
