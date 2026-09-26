@@ -1,6 +1,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 import unittest
+import re
 
 
 class TripPageParser(HTMLParser):
@@ -106,9 +107,10 @@ class TripPageTest(unittest.TestCase):
         html = Path("index.html").read_text(encoding="utf-8")
 
         for text in (
-            "9/26 예보 기준",
-            "10/9 맑고 매우 습함",
-            "10/10 강풍 · 오후 소나기 가능",
+            "잠정 일정",
+            "https://www.jma.go.jp/bosai/forecast/",
+            "https://www.jma.go.jp/bosai/warning/",
+            "https://www.data.jma.go.jp/waveinf/",
             "출발 48시간 전 재확인",
         ):
             self.assertIn(text, html)
@@ -121,7 +123,7 @@ class TripPageTest(unittest.TestCase):
             "추가 ¥1,000",
             "이용 50분",
             "1인 1주문",
-            "14:10까지 입장 가능할 때만",
+            "13:50까지 입장 가능할 때만",
             "나키진의 숲",
             "카진호 피자",
             "현금 결제만",
@@ -142,7 +144,8 @@ class TripPageTest(unittest.TestCase):
         for text in (
             "카진호 우선 · fuu cafe 대안",
             "11:40 이내 입장",
-            "11:05까지",
+            "13:20",
+            "식당별 경로",
             "오션블루 유료좌석은 생략",
             "현금 결제만 가능",
         ):
@@ -181,6 +184,28 @@ class TripPageTest(unittest.TestCase):
             day_html = html.split(f'id="{day}"', 1)[1].split(f'id="{next_day}"', 1)[0]
             self.assertIn(f"{day[-1]}일차 당일 꿀팁", day_html)
         self.assertIn("4일차 당일 꿀팁", html.split('id="day4"', 1)[1].split('id="playground"', 1)[0])
+
+    def test_bilingual_pages_share_schedule_sources_and_sections(self):
+        pages = [Path(name).read_text(encoding="utf-8") for name in ("index.html", "ja.html")]
+        parsers = [TripPageParser(), TripPageParser()]
+        for html, parser in zip(pages, parsers):
+            parser.feed(html)
+            self.assertTrue({"weather", "japanese-reviews", "ticket-tips", "food-options"} <= parser.ids)
+            self.assertEqual(len(re.findall(r'id="[^"]+"', html)), len(parser.ids))
+            self.assertTrue(parser.viewport)
+            self.assertFalse(parser.external_assets)
+            self.assertIn("¥45,000", html)
+            self.assertIn("https://taruboublog.com/sesoko-beach/", html)
+            self.assertNotIn("9/26 예보 기준", html)
+            for href in parser.hrefs:
+                if href.startswith("#"):
+                    self.assertIn(href[1:], parser.ids)
+        self.assertEqual(parsers[0].ids, parsers[1].ids)
+        self.assertEqual([i["src"] for i in parsers[0].images], [i["src"] for i in parsers[1].images])
+        self.assertEqual({h for h in parsers[0].hrefs if h.startswith("https://")},
+                         {h for h in parsers[1].hrefs if h.startswith("https://")})
+        self.assertEqual(re.findall(r'<time class="time">(.*?)</time>', pages[0]),
+                         re.findall(r'<time class="time">(.*?)</time>', pages[1]))
 
 
 if __name__ == "__main__":
