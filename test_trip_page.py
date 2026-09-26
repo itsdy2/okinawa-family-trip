@@ -135,6 +135,28 @@ class TripPageTest(unittest.TestCase):
         ):
             self.assertIn(url, html)
 
+    def test_recent_naver_reviews_are_dated_and_actionable(self):
+        html = Path("index.html").read_text(encoding="utf-8")
+
+        for text in (
+            "2025.10 이후 후기 기반 꿀팁",
+            "개인 후기",
+            "P6·P7",
+            "100엔 동전 5개",
+            "차탄초 공영주차장",
+            "면세 카운터는 4층",
+            "10:38 도착에도 대기",
+        ):
+            self.assertIn(text, html)
+        for url in (
+            "https://blog.naver.com/anne230/224419029221",
+            "https://blog.naver.com/choihj0228/224406523657",
+            "https://blog.naver.com/joyandjenny/224422004364",
+            "https://blog.naver.com/ejsj1004/224382501115",
+            "https://blog.naver.com/haessla1/224369725722",
+        ):
+            self.assertIn(url, html)
+
 
 if __name__ == "__main__":
     unittest.main()
