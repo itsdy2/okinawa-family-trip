@@ -135,11 +135,14 @@ class TripPageTest(unittest.TestCase):
         ):
             self.assertIn(url, html)
 
-    def test_recent_naver_reviews_are_dated_and_actionable(self):
+    def test_recent_review_tips_are_attached_to_each_day(self):
         html = Path("index.html").read_text(encoding="utf-8")
 
         for text in (
-            "2025.10 이후 후기 기반 꿀팁",
+            "1일차 당일 꿀팁",
+            "2일차 당일 꿀팁",
+            "3일차 당일 꿀팁",
+            "4일차 당일 꿀팁",
             "개인 후기",
             "P6·P7",
             "100엔 동전 5개",
@@ -156,6 +159,13 @@ class TripPageTest(unittest.TestCase):
             "https://blog.naver.com/haessla1/224369725722",
         ):
             self.assertIn(url, html)
+        self.assertNotIn('id="recent-reviews"', html)
+        self.assertIn(".day>details{margin:0 18px 18px}", html)
+
+        for day, next_day in (("day1", "day2"), ("day2", "day3"), ("day3", "day4")):
+            day_html = html.split(f'id="{day}"', 1)[1].split(f'id="{next_day}"', 1)[0]
+            self.assertIn(f"{day[-1]}일차 당일 꿀팁", day_html)
+        self.assertIn("4일차 당일 꿀팁", html.split('id="day4"', 1)[1].split('id="playground"', 1)[0])
 
 
 if __name__ == "__main__":
