@@ -76,15 +76,16 @@ if (typeof document !== 'undefined') {
   });
   if (location.hash) revealHash();
 
-  document.querySelectorAll('.language-switch a').forEach(anchor => {
+  document.querySelectorAll('.language-switch a, .day-nav a[hreflang]').forEach(anchor => {
     anchor.addEventListener('click', () => {
       // Keep the visible section; a stale hash can point to a section already scrolled past.
-      const sections = [...document.querySelectorAll('main section[id], main .section-intro[id]')];
-      const visible = sections.find(section => {
+      const sections = [...document.querySelectorAll('main section[id], main .section-intro[id], .food-group[id], .restaurant[id]')];
+      const readingLine = document.querySelector('.day-nav').getBoundingClientRect().bottom + 16;
+      const visible = sections.filter(section => {
         const rect = section.getBoundingClientRect();
-        return rect.top <= 110 && rect.bottom > 110;
-      }) || sections.find(section => section.getBoundingClientRect().top > 0);
-      const inHero = document.querySelector('.hero').getBoundingClientRect().bottom > 110;
+        return rect.top <= readingLine && rect.bottom > readingLine;
+      }).at(-1) || sections.find(section => section.getBoundingClientRect().top > readingLine);
+      const inHero = document.querySelector('.hero').getBoundingClientRect().bottom > readingLine;
       anchor.href = languageTarget(anchor.getAttribute('href'), inHero ? '' : visible ? '#' + visible.id : location.hash);
     });
   });
