@@ -1,0 +1,15 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+assert.ok(fs.existsSync('./assets/trip.js'), 'shared search/language behavior is missing');
+const { matchesRestaurant, languageTarget } = require('./assets/trip.js');
+const card = { text: 'Transit Café トランジット 카페 차탄', region: 'chatan', category: 'cafe' };
+assert.equal(matchesRestaurant(card, ' TRANSIT cafe ', 'chatan', 'cafe'), true);
+assert.equal(matchesRestaurant(card, '카페 차탄', '', ''), true);
+assert.equal(matchesRestaurant(card, 'トランジット', '', 'cafe'), true);
+assert.equal(matchesRestaurant(card, 'Transit', 'naha', ''), false);
+assert.equal(matchesRestaurant(card, '', '', 'steak'), false);
+assert.equal(matchesRestaurant(card, 'missing', '', ''), false);
+assert.equal(matchesRestaurant(card, '   ', '', ''), true);
+assert.equal(languageTarget('./ja.html', '#food-d2north'), './ja.html#food-d2north');
+assert.equal(languageTarget('./index.html', ''), './index.html');
+console.log('Search and language checks passed');

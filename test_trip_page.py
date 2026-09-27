@@ -180,7 +180,7 @@ class TripPageTest(unittest.TestCase):
         ):
             self.assertIn(url, html)
         self.assertNotIn('id="recent-reviews"', html)
-        self.assertIn(".day>details{margin:0 18px 18px}", html)
+        self.assertIn(".day>details{margin:0 18px 18px}", Path("assets/trip.css").read_text(encoding="utf-8"))
 
         for day, next_day in (("day1", "day2"), ("day2", "day3"), ("day3", "day4")):
             day_html = html.split(f'id="{day}"', 1)[1].split(f'id="{next_day}"', 1)[0]
@@ -208,6 +208,25 @@ class TripPageTest(unittest.TestCase):
                          {h for h in parsers[1].hrefs if h.startswith("https://")})
         self.assertEqual(re.findall(r'<time class="time">(.*?)</time>', pages[0]),
                          re.findall(r'<time class="time">(.*?)</time>', pages[1]))
+
+    def test_navigation_and_search_are_available_in_both_languages(self):
+        for filename in ("index.html", "ja.html"):
+            html = Path(filename).read_text(encoding="utf-8")
+            nav = re.search(r'<nav class="day-nav".*?</nav>', html, re.S).group()
+            self.assertEqual(re.findall(r'href="(#[^"]+)"', nav),
+                             ["#itinerary", "#food-options", "#sea-options", "#travel-prep"])
+            parser = TripPageParser()
+            parser.feed(html)
+            self.assertTrue({"key-checks", "itinerary", "sea-options", "travel-prep", "food-search",
+                             "food-region", "food-category", "food-count", "food-reset"} <= parser.ids)
+            self.assertIn('href="assets/trip.css"', html)
+            self.assertIn('src="assets/trip.js"', html)
+            self.assertLess(html.index('id="key-checks"'), html.index('id="day1"'))
+            self.assertLess(html.index('id="food-options"'), html.index('id="snorkel-options"'))
+            self.assertLess(html.index('id="snorkel-options"'), html.index('id="travel-prep"'))
+            cards = re.findall(r'<article class="restaurant"[^>]+>', html)
+            self.assertEqual(len(cards), 64)
+            self.assertTrue(all('data-region="' in c and 'data-category="' in c for c in cards))
 
     def test_restaurant_alternatives_have_branch_specific_map_links(self):
         places = []
