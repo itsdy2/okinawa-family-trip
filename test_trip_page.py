@@ -1,5 +1,7 @@
 from html.parser import HTMLParser
+from html import unescape
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 import unittest
 import re
 
@@ -206,6 +208,26 @@ class TripPageTest(unittest.TestCase):
                          {h for h in parsers[1].hrefs if h.startswith("https://")})
         self.assertEqual(re.findall(r'<time class="time">(.*?)</time>', pages[0]),
                          re.findall(r'<time class="time">(.*?)</time>', pages[1]))
+
+    def test_restaurant_alternatives_have_branch_specific_map_links(self):
+        places = []
+        for filename in ("index.html", "ja.html"):
+            html = Path(filename).read_text(encoding="utf-8")
+            cards = re.findall(r'<article class="restaurant" data-place="([^"]+)"[^>]*>(.*?)</article>', html, re.S)
+            self.assertGreaterEqual(len(cards), 50)
+            places.append([place for place, _ in cards])
+            for place, card in cards:
+                parser = TripPageParser()
+                parser.feed(card)
+                self.assertTrue(any("tabelog.com" in href for href in parser.hrefs), place)
+                maps = [href for href in parser.hrefs if "google.com/maps/search/" in href]
+                self.assertEqual(len(maps), 1, place)
+                query = parse_qs(urlparse(maps[0]).query)
+                self.assertEqual(query.get("api"), ["1"], place)
+                self.assertTrue(query.get("query", [""])[0].strip(), place)
+                branch = unescape(re.search(r"<small>(.*?)</small>", card).group(1))
+                self.assertEqual(query["query"], [" ".join(branch.rsplit(" · ", 1))], place)
+        self.assertEqual(places[0], places[1])
 
 
 if __name__ == "__main__":
