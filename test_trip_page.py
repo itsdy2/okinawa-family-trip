@@ -52,7 +52,7 @@ class TripPageTest(unittest.TestCase):
         parser.feed(html)
 
         day_images = [image for image in parser.images if "day-image" in image.get("class", "")]
-        self.assertEqual(len(day_images), 4)
+        self.assertEqual(len(day_images), 3)
         self.assertTrue(all(image.get("loading") == "lazy" for image in day_images))
         self.assertTrue(all(Path(image["src"]).is_file() for image in day_images))
         for text in (
@@ -62,15 +62,15 @@ class TripPageTest(unittest.TestCase):
             "아메리칸빌리지 자유시간",
             "고우리섬",
             "Gala 아오이우미",
-            "오키나와 어린이왕국",
+            "나고 파인애플파크",
             "리우보 백화점",
             "성인 2명 · 택시로 공항",
             "아이 사이드 플랜",
             "예상 비용",
-            "¥128,000~168,000",
+            "¥163,380~203,380",
         ):
             self.assertIn(text, html)
-        for removed in ("류큐무라", "네오파크 오키나와", "시사이드 드라이브인"):
+        for removed in ("류큐무라", "네오파크 오키나와", "시사이드 드라이브인", "어린이왕국"):
             self.assertNotIn(removed, html)
 
     def test_visit_japan_web_guide_includes_family_and_hotel_example(self):
@@ -95,7 +95,7 @@ class TripPageTest(unittest.TestCase):
 
         for text in (
             "세소코비치 스노클링",
-            "카진호 우선 · fuu cafe 대안",
+            "모토부·세소코 방향 점심",
             "샤워 5분 ¥500",
             "500엔 동전",
             "파고가 높거나 시설 미운영 시",
@@ -125,7 +125,7 @@ class TripPageTest(unittest.TestCase):
             "추가 ¥1,000",
             "이용 50분",
             "1인 1주문",
-            "13:50까지 입장 가능할 때만",
+            "11:30 출발이 우선",
             "나키진의 숲",
             "카진호 피자",
             "현금 결제만",
@@ -139,20 +139,45 @@ class TripPageTest(unittest.TestCase):
         ):
             self.assertIn(url, html)
 
-    def test_day_two_uses_kajinhou_with_a_strict_fuu_fallback(self):
+    def test_revised_bilingual_route_and_airport_bus(self):
+        for filename, aquarium, snorkel, pineapple, kouri, hotel, zoo in (
+            ("index.html", "츄라우미 수족관", "세소코비치 스노클링", "나고 파인애플파크", "고우리섬 이동", "호텔 복귀·샤워·휴식", "어린이왕국"),
+            ("ja.html", "沖縄美ら海水族館", "瀬底ビーチでシュノーケリング", "ナゴパイナップルパーク", "古宇利島へ移動", "ホテルに戻りシャワー・休憩", "こどもの国"),
+        ):
+            html = Path(filename).read_text(encoding="utf-8")
+            days = {n: re.search(r'<section class="day" id="day' + str(n) + r'".*?</section>', html, re.S).group() for n in (1, 2, 3)}
+            day2 = days[2].split('<ol class="timeline">')[1].split('</ol>')[0]
+            day3 = days[3].split('<ol class="timeline">')[1].split('</ol>')[0]
+            self.assertLess(day2.index(aquarium), day2.index(snorkel))
+            self.assertLess(day2.index(snorkel), day2.index(hotel))
+            self.assertLess(day3.index(pineapple), day3.index(kouri))
+            self.assertNotIn(zoo, html)
+            self.assertIn('05:10', days[1])
+            self.assertIn('06:40', days[1])
+            self.assertIn('04:25', days[1])
+            self.assertIn('11,900', days[1])
+            self.assertIn('¥22,880', html)
+            self.assertIn('¥163,380~203,380', html)
+            self.assertNotIn('13:50', html)
+            for n, waypoints in ((2, ['Okinawa Churaumi Aquarium', 'Sesoko Beach']), (3, ['Nago Pineapple Park', 'Kouri Beach'])):
+                parser = TripPageParser()
+                parser.feed(days[n])
+                route = next(h for h in parser.hrefs if 'maps/dir/' in h)
+                self.assertEqual(parse_qs(urlparse(route).query)['waypoints'], ['|'.join(waypoints)])
+
+    def test_day_two_lunch_is_conditional_on_tour_checkin(self):
         html = Path("index.html").read_text(encoding="utf-8")
         day_two = html.split('id="day2"', 1)[1].split('id="day3"', 1)[0]
 
         for text in (
-            "카진호 우선 · fuu cafe 대안",
-            "11:40 이내 입장",
-            "13:20",
-            "식당별 경로",
-            "오션블루 유료좌석은 생략",
-            "현금 결제만 가능",
+            "모토부·세소코 방향 점심",
+            "12:30 식사 종료",
+            "13:00",
+            "집합 시간",
+            "오후 투어",
         ):
             self.assertIn(text, day_two)
-        self.assertLess(day_two.index("카진호 우선"), day_two.index("<strong>츄라우미 수족관"))
+        self.assertLess(day_two.index("<strong>츄라우미 수족관"), day_two.index("<strong>모토부·세소코 방향 점심"))
         self.assertNotIn("정규 일정에는 이동과 대기 시간이 부족해 넣지 않습니다", html)
 
     def test_recent_review_tips_are_attached_to_each_day(self):
