@@ -6,6 +6,8 @@ const SHELL = [
   './site.webmanifest',
   './assets/trip.css',
   './assets/trip.js',
+  './assets/app-icon-192.png',
+  './assets/app-icon-512.png',
   './assets/app-icon.svg',
   './assets/day-1.jpg',
   './assets/day-2-v2.jpg',

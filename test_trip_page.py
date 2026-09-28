@@ -309,11 +309,14 @@ class TripPageTest(unittest.TestCase):
         manifest = json.loads(Path("site.webmanifest").read_text(encoding="utf-8"))
         self.assertEqual(manifest["scope"], "./")
         self.assertEqual(manifest["start_url"], "./index.html")
+        self.assertTrue({"192x192", "512x512"} <= {size for icon in manifest["icons"] for size in icon["sizes"].split()})
         for icon in manifest["icons"]:
             self.assertTrue(Path(icon["src"].removeprefix("./")).is_file())
         service_worker = Path("sw.js").read_text(encoding="utf-8")
         for behavior in ("caches.open", "request.mode === 'navigate'", "clients.claim", "cache.addAll"):
             self.assertIn(behavior, service_worker)
+        for icon in manifest["icons"]:
+            self.assertIn(icon["src"], service_worker)
         self.assertIn("serviceWorker.register('./sw.js'", Path("assets/trip.js").read_text(encoding="utf-8"))
         parser = TripPageParser()
         parser.feed(Path("index.html").read_text(encoding="utf-8"))

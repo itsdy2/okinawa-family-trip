@@ -33,7 +33,7 @@
 
 - [ ] **Step 1: Add a manifest check** to `test_trip_page.py` for both page manifest links, valid project-relative start URL/scope, and required icon declaration.
 - [ ] **Step 2: Run `python -m unittest test_trip_page.py`** and confirm the new assertions fail.
-- [ ] **Step 3: Add a simple square `assets/app-icon.svg`** and a manifest with project-relative start URL/scope, standalone display, theme color, and the icon declared as SVG.
+- [ ] **Step 3: Add square 192x192 and 512x512 PNG app icons** plus `assets/app-icon.svg`, and declare all three in a manifest with project-relative start URL/scope, standalone display, and theme color. Chromium installability checks require both PNG sizes; the SVG remains a scalable fallback.
 - [ ] **Step 4: Add `sw.js`** with a versioned shell cache for `index.html`, `ja.html`, `assets/trip.css`, `assets/trip.js`, the local day images, manifest, and icon. Install pre-caches the shell; activation removes older `okinawa-trip-*` caches; navigation revalidates the HTTP cache before network-first fallback; same-origin static assets are cache-first; cross-origin requests pass through.
 - [ ] **Step 5: Add manifest/theme links** in both document heads and register `./sw.js` from `assets/trip.js` only on HTTPS or localhost. Add a brief offline limitation note near the emergency/navigation section.
 - [ ] **Step 6: Run `python -m unittest test_trip_page.py` and `node test_trip_ui.cjs`;** serve over localhost, load both pages once, switch offline, reload each language page, and verify local images/styles load while Google Maps remains unavailable as expected.
