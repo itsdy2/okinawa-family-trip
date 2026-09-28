@@ -152,10 +152,10 @@ class TripPageTest(unittest.TestCase):
             self.assertLess(day2.index(snorkel), day2.index(hotel))
             self.assertLess(day3.index(pineapple), day3.index(kouri))
             self.assertNotIn(zoo, html)
-            self.assertIn('05:10', days[1])
-            self.assertIn('06:40', days[1])
+            self.assertIn('<time class="time">04:45</time>', days[1])
+            self.assertIn('<time class="time">06:10</time>', days[1])
             self.assertIn('04:25', days[1])
-            self.assertIn('11,900', days[1])
+            self.assertIn('12,500', days[1])
             self.assertIn('¥22,880', html)
             self.assertIn('¥163,380~203,380', html)
             self.assertNotIn('13:50', html)
@@ -229,8 +229,12 @@ class TripPageTest(unittest.TestCase):
                     self.assertIn(href[1:], parser.ids)
         self.assertEqual(parsers[0].ids, parsers[1].ids)
         self.assertEqual([i["src"] for i in parsers[0].images], [i["src"] for i in parsers[1].images])
-        self.assertEqual({h for h in parsers[0].hrefs if h.startswith("https://")},
-                         {h for h in parsers[1].hrefs if h.startswith("https://")})
+        ko_links = {h for h in parsers[0].hrefs if h.startswith("https://")}
+        ja_links = {h for h in parsers[1].hrefs if h.startswith("https://")}
+        self.assertIn("https://kr.aeonmall.global/mall/okinawarycom", ko_links)
+        self.assertIn("https://okinawarycom.aeonmall.jp/", ja_links)
+        self.assertEqual(ko_links - {"https://kr.aeonmall.global/mall/okinawarycom"},
+                         ja_links - {"https://okinawarycom.aeonmall.jp/"})
         self.assertEqual(re.findall(r'<time class="time">(.*?)</time>', pages[0]),
                          re.findall(r'<time class="time">(.*?)</time>', pages[1]))
 
@@ -239,7 +243,10 @@ class TripPageTest(unittest.TestCase):
             html = Path(filename).read_text(encoding="utf-8")
             nav = re.search(r'<nav class="day-nav".*?</nav>', html, re.S).group()
             self.assertEqual(re.findall(r'href="(#[^"]+)"', nav),
-                             ["#itinerary", "#food-options", "#sea-options", "#travel-prep"])
+                             ["#itinerary", "#food-options", "#sea-options", "#playgrounds", "#travel-prep"])
+            playgrounds = html.split('id="playgrounds"', 1)[1].split('id="travel-prep"', 1)[0]
+            self.assertEqual(playgrounds.count('https://www.google.com/maps/search/?api=1&amp;query='), 4)
+            self.assertIn('https://oki-park.jp/kaiyohaku/inst/76/138', playgrounds)
             parser = TripPageParser()
             parser.feed(html)
             self.assertTrue({"key-checks", "itinerary", "sea-options", "travel-prep", "food-search",
