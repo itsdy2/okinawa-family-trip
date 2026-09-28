@@ -15,7 +15,7 @@
 - Keep Korean and Japanese pages equivalent.
 - Only show MapCodes confirmed on official venue sources; do not guess restaurant numbers.
 - JNTO 050-3816-2787; Okinawa medical consultation 0570-050-235.
-- Show local phone formatting and use international `tel:+...` links.
+- Show local phone formatting and use international `tel:+...` links except locally dialable Japanese 119/110 emergency codes and the 0570 medical line.
 - Emergency dispatch takes priority for life-threatening events; hospital acceptance must be confirmed.
 
 ## Review Focus

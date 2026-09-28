@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 import unittest
 import re
+import json
 
 
 class TripPageParser(HTMLParser):
@@ -279,6 +280,52 @@ class TripPageTest(unittest.TestCase):
                 branch = unescape(re.search(r"<small>(.*?)</small>", card).group(1))
                 self.assertEqual(query["query"], [" ".join(branch.rsplit(" · ", 1))], place)
         self.assertEqual(places[0], places[1])
+
+    def test_navigation_codes_emergency_contacts_and_day_bar_exist_in_both_languages(self):
+        for filename in ("index.html", "ja.html"):
+            html = Path(filename).read_text(encoding="utf-8")
+            self.assertIn('class="day-quick-nav"', html)
+            if filename == "index.html":
+                self.assertIn("\uc77c\uc815 \ubc14\ub85c\uac00\uae30", html)
+                self.assertIn("\ucc28\ub7c9 \ub0b4\ube44\uac8c\uc774\uc158", html)
+            else:
+                self.assertIn("\u65e5\u7a0b\u3078\u306e\u30af\u30a4\u30c3\u30af\u30ea\u30f3\u30af", html)
+                self.assertIn("\u30ab\u30fc\u30ca\u30d3", html)
+            for day in range(1, 5):
+                self.assertIn(f'href="#day{day}"', html)
+            for value in (
+                "33 530 406*45", "553075409", "050-3816-2787", "0570-050-235",
+                "+81-80-8588-2806", "+81-80-2956-6736", "+82-2-3210-0404",
+                "098-973-4111", "098-894-1301", "080-7655-5400", "tel:+818076555400", "tel:+",
+            ):
+                self.assertIn(value, html)
+            self.assertIn('data-copy="33 530 406*45"', html)
+            self.assertIn('aria-live="polite"', html)
+
+    def test_offline_manifest_and_service_worker_are_project_scoped(self):
+        for filename in ("index.html", "ja.html"):
+            html = Path(filename).read_text(encoding="utf-8")
+            self.assertIn('rel="manifest" href="./site.webmanifest"', html)
+        manifest = json.loads(Path("site.webmanifest").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["scope"], "./")
+        self.assertEqual(manifest["start_url"], "./index.html")
+        for icon in manifest["icons"]:
+            self.assertTrue(Path(icon["src"].removeprefix("./")).is_file())
+        service_worker = Path("sw.js").read_text(encoding="utf-8")
+        for behavior in ("caches.open", "request.mode === 'navigate'", "clients.claim", "cache.addAll"):
+            self.assertIn(behavior, service_worker)
+        self.assertIn("serviceWorker.register('./sw.js'", Path("assets/trip.js").read_text(encoding="utf-8"))
+        parser = TripPageParser()
+        parser.feed(Path("index.html").read_text(encoding="utf-8"))
+        for image in parser.images:
+            self.assertIn("./" + image["src"], service_worker)
+
+    def test_day_bar_respects_mobile_safe_area_and_print(self):
+        css = Path("assets/trip.css").read_text(encoding="utf-8")
+        self.assertRegex(css, r"\.day-quick-nav\{position:fixed")
+        self.assertIn("env(safe-area-inset-bottom)", css)
+        self.assertIn("@media print{.day-quick-nav{display:none}", css)
+        self.assertIn("main{padding-bottom:calc(90px + env(safe-area-inset-bottom))}", css)
 
 
 if __name__ == "__main__":

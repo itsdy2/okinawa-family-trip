@@ -12,9 +12,18 @@ function languageTarget(href, hash) {
   return href.split('#')[0] + hash;
 }
 
-if (typeof module !== 'undefined') module.exports = { matchesRestaurant, languageTarget };
+async function copyValue(value, clipboard) {
+  if (!clipboard || typeof clipboard.writeText !== 'function') return false;
+  try { await clipboard.writeText(value); return true; } catch { return false; }
+}
+
+if (typeof module !== 'undefined') module.exports = { matchesRestaurant, languageTarget, copyValue };
 
 if (typeof document !== 'undefined') {
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+  }
+
   const search = document.getElementById('food-search');
   const region = document.getElementById('food-region');
   const category = document.getElementById('food-category');
@@ -75,6 +84,16 @@ if (typeof document !== 'undefined') {
     if (anchor && anchor.hash === location.hash) revealHash();
   });
   if (location.hash) revealHash();
+
+  document.addEventListener('click', async event => {
+    const button = event.target.closest('button[data-copy]');
+    if (!button) return;
+    const status = document.getElementById(button.getAttribute('aria-describedby'));
+    const copied = await copyValue(button.dataset.copy, navigator.clipboard);
+    if (status) status.textContent = document.documentElement.lang === 'ja'
+      ? (copied ? 'コピーしました' : 'コピーできません。コードを選択してコピーしてください')
+      : (copied ? '복사했습니다' : '복사할 수 없습니다. 코드를 선택해 복사하세요');
+  });
 
   document.querySelectorAll('.language-switch a, .day-nav a[hreflang]').forEach(anchor => {
     anchor.addEventListener('click', () => {

@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 assert.ok(fs.existsSync('./assets/trip.js'), 'shared search/language behavior is missing');
-const { matchesRestaurant, languageTarget } = require('./assets/trip.js');
+const { matchesRestaurant, languageTarget, copyValue } = require('./assets/trip.js');
 const card = { text: 'Transit Café トランジット 카페 차탄', region: 'chatan', category: 'cafe' };
 assert.equal(matchesRestaurant(card, ' TRANSIT cafe ', 'chatan', 'cafe'), true);
 assert.equal(matchesRestaurant(card, '카페 차탄', '', ''), true);
@@ -12,4 +12,11 @@ assert.equal(matchesRestaurant(card, 'missing', '', ''), false);
 assert.equal(matchesRestaurant(card, '   ', '', ''), true);
 assert.equal(languageTarget('./ja.html', '#food-d2north'), './ja.html#food-d2north');
 assert.equal(languageTarget('./index.html', ''), './index.html');
-console.log('Search and language checks passed');
+(async () => {
+  let copied = '';
+  assert.equal(await copyValue('553075409', { writeText: async value => { copied = value; } }), true);
+  assert.equal(copied, '553075409');
+  assert.equal(await copyValue('553075409', null), false);
+  assert.equal(await copyValue('553075409', { writeText: async () => { throw new Error('denied'); } }), false);
+  console.log('Search, language, and copy checks passed');
+})().catch(error => { console.error(error); process.exitCode = 1; });
