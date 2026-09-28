@@ -6,6 +6,7 @@
 # Generated/cache files
 /__pycache__/
 *.pyc
+/.worktrees/
 
 # Uncompressed image sources
 /assets/*-v2.png
