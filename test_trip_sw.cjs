@@ -51,10 +51,10 @@ async function request(url, mode = 'cors') {
 }
 
 (async () => {
-  await stores.set('okinawa-trip-v4', new Map());
+  await stores.set('okinawa-trip-v5', new Map());
   await trigger('install');
   await trigger('activate');
-  assert.equal(stores.has('okinawa-trip-v4'), false, 'activation removes the previous app cache');
+  assert.equal(stores.has('okinawa-trip-v5'), false, 'activation removes the previous app cache');
 
   const onlinePage = await request(scope + 'index.html', 'navigate');
   assert.match(await onlinePage.text(), /^network:/, 'navigation prefers the current network page');

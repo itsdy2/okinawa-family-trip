@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'okinawa-trip-';
-const CACHE_NAME = `${CACHE_PREFIX}v5`;
+const CACHE_NAME = `${CACHE_PREFIX}v6`;
 const SHELL = [
   './index.html',
   './ja.html',
@@ -11,6 +11,7 @@ const SHELL = [
   './assets/app-icon.svg',
   './assets/day-1.jpg',
   './assets/day-2-v2.jpg',
+  './assets/day-3.jpg',
   './assets/day-4.jpg'
 ];
 

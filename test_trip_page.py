@@ -53,7 +53,8 @@ class TripPageTest(unittest.TestCase):
         parser.feed(html)
 
         day_images = [image for image in parser.images if "day-image" in image.get("class", "")]
-        self.assertEqual(len(day_images), 3)
+        self.assertEqual(len(day_images), 4)
+        self.assertEqual(day_images[2]["src"], "assets/day-3.jpg")
         self.assertTrue(all(image.get("loading") == "lazy" for image in day_images))
         self.assertTrue(all(Path(image["src"]).is_file() for image in day_images))
         for text in (
