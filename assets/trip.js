@@ -85,6 +85,28 @@ if (typeof document !== 'undefined') {
   });
   if (location.hash) revealHash();
 
+  const dayLinks = [...document.querySelectorAll('.day-quick-nav a')];
+  const days = [...document.querySelectorAll('section.day')];
+  let scrollPending = false;
+  function updateCurrentDay() {
+    const readingLine = document.querySelector('.day-nav').getBoundingClientRect().bottom + 20;
+    const current = days.find(day => {
+      const rect = day.getBoundingClientRect();
+      return rect.top <= readingLine && rect.bottom > readingLine;
+    });
+    dayLinks.forEach(link => {
+      if (current && link.hash === '#' + current.id) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+    updateLanguageLinks();
+    scrollPending = false;
+  }
+  window.addEventListener('scroll', () => {
+    if (!scrollPending) { scrollPending = true; requestAnimationFrame(updateCurrentDay); }
+  }, { passive: true });
+  window.addEventListener('resize', updateCurrentDay);
+  updateCurrentDay();
+
   document.addEventListener('click', async event => {
     const button = event.target.closest('button[data-copy]');
     if (!button) return;
@@ -95,17 +117,21 @@ if (typeof document !== 'undefined') {
       : (copied ? '복사했습니다' : '복사할 수 없습니다. 코드를 선택해 복사하세요');
   });
 
-  document.querySelectorAll('.language-switch a, .day-nav a[hreflang]').forEach(anchor => {
-    anchor.addEventListener('click', () => {
+  function updateLanguageLinks() {
       // Keep the visible section; a stale hash can point to a section already scrolled past.
       const sections = [...document.querySelectorAll('main section[id], main .section-intro[id], .food-group[id], .restaurant[id]')];
-      const readingLine = document.querySelector('.day-nav').getBoundingClientRect().bottom + 16;
-      const visible = sections.filter(section => {
+      const readingLine = document.querySelector('.day-nav').getBoundingClientRect().bottom + 20;
+      const nearTop = sections.find(section => {
+        const top = section.getBoundingClientRect().top;
+        return '#' + section.id === location.hash && top >= readingLine - 24 && top <= readingLine + 24;
+      });
+      const visible = nearTop || sections.filter(section => {
         const rect = section.getBoundingClientRect();
         return rect.top <= readingLine && rect.bottom > readingLine;
       }).at(-1) || sections.find(section => section.getBoundingClientRect().top > readingLine);
       const inHero = document.querySelector('.hero').getBoundingClientRect().bottom > readingLine;
-      anchor.href = languageTarget(anchor.getAttribute('href'), inHero ? '' : visible ? '#' + visible.id : location.hash);
-    });
-  });
+      document.querySelectorAll('.language-switch a, .day-nav a[hreflang]').forEach(anchor => {
+        anchor.href = languageTarget(anchor.getAttribute('href'), inHero ? '' : visible ? '#' + visible.id : location.hash);
+      });
+  }
 }

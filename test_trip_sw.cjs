@@ -6,6 +6,7 @@ const scope = 'https://example.test/okinawa-family-trip/';
 const stores = new Map();
 const listeners = {};
 let offline = false;
+let serverError = false;
 const networkRequests = [];
 const caches = {
   async open(name) {
@@ -32,6 +33,7 @@ const self = {
 const fetch = async (request, init) => {
   networkRequests.push(init);
   if (offline) throw new Error('offline');
+  if (serverError) return new Response('unavailable', { status: 503 });
   return new Response(`network:${request.url || request}`);
 };
 vm.runInNewContext(fs.readFileSync('./sw.js', 'utf8'), { self, caches, fetch, URL, Promise, Response });
@@ -49,15 +51,20 @@ async function request(url, mode = 'cors') {
 }
 
 (async () => {
-  await stores.set('okinawa-trip-v1', new Map());
+  await stores.set('okinawa-trip-v2', new Map());
   await trigger('install');
   await trigger('activate');
-  assert.equal(stores.has('okinawa-trip-v1'), false, 'activation removes the previous app cache');
+  assert.equal(stores.has('okinawa-trip-v2'), false, 'activation removes the previous app cache');
 
   const onlinePage = await request(scope + 'index.html', 'navigate');
   assert.match(await onlinePage.text(), /^network:/, 'navigation prefers the current network page');
   assert.equal(networkRequests.at(-1)?.cache, 'no-cache', 'navigation revalidates the HTTP cache');
+  await request(scope + '?revision=latest', 'navigate');
+  serverError = true;
+  assert.equal(await (await request(scope, 'navigate')).text(), 'network:' + scope + '?revision=latest', 'server failure uses the latest saved page');
+  serverError = false;
   offline = true;
+  assert.equal(await (await request(scope + 'index.html?offline=1', 'navigate')).text(), 'network:' + scope + '?revision=latest', 'root and query variants share the latest offline page');
   const page = await request(scope + 'ja.html?offline=1', 'navigate');
   assert.match(await page.text(), /cached:\.\/ja\.html/, 'offline Japanese navigation returns its cached page');
   const css = await request(scope + 'assets/trip.css');

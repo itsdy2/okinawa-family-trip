@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'okinawa-trip-';
-const CACHE_NAME = `${CACHE_PREFIX}v2`;
+const CACHE_NAME = `${CACHE_PREFIX}v3`;
 const SHELL = [
   './index.html',
   './ja.html',
@@ -31,14 +31,15 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
+      const fallback = new URL(url.pathname.endsWith('/ja.html') ? './ja.html' : './index.html', self.registration.scope);
       try {
         const response = await fetch(request, { cache: 'no-cache' });
-        if (response.ok) (await caches.open(CACHE_NAME)).put(request, response.clone());
+        if (response.status >= 500) throw new Error('Page temporarily unavailable');
+        if (response.ok) await (await caches.open(CACHE_NAME)).put(fallback, response.clone());
         return response;
       } catch {
         const cache = await caches.open(CACHE_NAME);
-        const fallback = new URL(url.pathname.endsWith('/ja.html') ? './ja.html' : './index.html', self.registration.scope);
-        return await cache.match(request) || await cache.match(fallback);
+        return await cache.match(fallback);
       }
     })());
     return;
