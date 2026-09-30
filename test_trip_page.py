@@ -184,6 +184,16 @@ class TripPageTest(unittest.TestCase):
                 self.assertEqual(query['destination'], [destination])
                 self.assertEqual(query['waypoints'], ['|'.join(waypoints)])
 
+    def test_airport_bus_booking_is_confirmed_in_both_languages(self):
+        for filename, confirmed, stale in (
+            ("index.html", "04:45편 예매 완료", "예매 여부 미확인"),
+            ("ja.html", "04:45便は予約済み", "予約は未確認"),
+        ):
+            html = Path(filename).read_text(encoding="utf-8")
+            day_one = html.split('id="day1"', 1)[1].split('</section>', 1)[0]
+            self.assertIn(confirmed, day_one)
+            self.assertNotIn(stale, html)
+
     def test_day_two_return_adds_aw_and_conditional_manzamo(self):
         for filename, shower, aw, manzamo, hotel, option_title, removed in (
             ("index.html", "간단한 샤워·환복", "A&amp;W 나고점", "만좌모", "호텔 복귀·샤워·휴식",
