@@ -146,7 +146,7 @@ class TripPageTest(unittest.TestCase):
             ("ja.html", "沖縄美ら海水族館", "瀬底ビーチでシュノーケリング", "ナゴパイナップルパーク", "古宇利島へ移動", "ホテルに戻りシャワー・休憩", "こどもの国"),
         ):
             html = Path(filename).read_text(encoding="utf-8")
-            days = {n: re.search(r'<section class="day" id="day' + str(n) + r'".*?</section>', html, re.S).group() for n in (1, 2, 3)}
+            days = {n: re.search(r'<section class="day" id="day' + str(n) + r'".*?</section>', html, re.S).group() for n in (1, 2, 3, 4)}
             day2 = days[2].split('<ol class="timeline">')[1].split('</ol>')[0]
             day3 = days[3].split('<ol class="timeline">')[1].split('</ol>')[0]
             self.assertLess(day2.index(aquarium), day2.index(snorkel))
@@ -160,11 +160,50 @@ class TripPageTest(unittest.TestCase):
             self.assertIn('¥22,880', html)
             self.assertIn('¥163,380~203,380', html)
             self.assertNotIn('13:50', html)
-            for n, waypoints in ((2, ['Okinawa Churaumi Aquarium', 'Sesoko Beach']), (3, ['Nago Pineapple Park', 'Kouri Beach'])):
+            for n, origin, destination, waypoints in (
+                (2, 'リザンシーパークホテル谷茶ベイ 沖縄県国頭郡恩納村谷茶1496',
+                 'リザンシーパークホテル谷茶ベイ 沖縄県国頭郡恩納村谷茶1496',
+                 ['沖縄美ら海水族館 沖縄県国頭郡本部町石川424',
+                  '瀬底ビーチ 沖縄県国頭郡本部町瀬底5583-1',
+                  'A&W名護店 沖縄県名護市東江5-16-12',
+                  '万座毛 沖縄県国頭郡恩納村恩納2767']),
+                (3, 'リザンシーパークホテル谷茶ベイ 沖縄県国頭郡恩納村谷茶1496',
+                 'ホテルトーマス旭橋駅 沖縄県那覇市東町8-6',
+                 ['ナゴパイナップルパーク 沖縄県名護市為又1195',
+                  '古宇利ビーチ 沖縄県国頭郡今帰仁村古宇利']),
+                (4, 'ホテルトーマス旭橋駅 沖縄県那覇市東町8-6',
+                 '那覇空港 沖縄県那覇市鏡水150',
+                 ['波上宮 沖縄県那覇市若狭1-25-11',
+                  'ジャッキーステーキハウス 沖縄県那覇市西1-7-3']),
+            ):
                 parser = TripPageParser()
                 parser.feed(days[n])
                 route = next(h for h in parser.hrefs if 'maps/dir/' in h)
-                self.assertEqual(parse_qs(urlparse(route).query)['waypoints'], ['|'.join(waypoints)])
+                query = parse_qs(urlparse(route).query)
+                self.assertEqual(query['origin'], [origin])
+                self.assertEqual(query['destination'], [destination])
+                self.assertEqual(query['waypoints'], ['|'.join(waypoints)])
+
+    def test_day_two_return_adds_aw_and_conditional_manzamo(self):
+        for filename, shower, aw, manzamo, hotel, option_title, removed in (
+            ("index.html", "간단한 샤워·환복", "A&amp;W 나고점", "만좌모", "호텔 복귀·샤워·휴식",
+             "2일차 귀환길 · 만좌모", "만좌모는 기본 일정·예산에서 제외합니다"),
+            ("ja.html", "簡単なシャワー・着替え", "A&amp;W名護店", "万座毛", "ホテルに戻りシャワー・休憩",
+             "2日目の帰路 · 万座毛", "万座毛は基本日程・予算に含めません"),
+        ):
+            html = Path(filename).read_text(encoding="utf-8")
+            day_two = html.split('id="day2"', 1)[1].split('id="day3"', 1)[0]
+            timeline = day_two.split('<ol class="timeline">', 1)[1].split('</ol>', 1)[0]
+
+            for text in (shower, aw, manzamo, hotel):
+                self.assertIn(text, timeline)
+            self.assertLess(timeline.index(shower), timeline.index(aw))
+            self.assertLess(timeline.index(aw), timeline.index(manzamo))
+            self.assertLess(timeline.index(manzamo), timeline.index(hotel))
+            self.assertIn("https://www.awok.co.jp/shopsearch/nago/", day_two)
+            self.assertIn("스노클링" if filename == "index.html" else "シュノーケリング", day_two)
+            self.assertIn(option_title, html)
+            self.assertNotIn(removed, html)
 
     def test_day_two_lunch_is_conditional_on_tour_checkin(self):
         html = Path("index.html").read_text(encoding="utf-8")
@@ -212,6 +251,23 @@ class TripPageTest(unittest.TestCase):
             day_html = html.split(f'id="{day}"', 1)[1].split(f'id="{next_day}"', 1)[0]
             self.assertIn(f"{day[-1]}일차 당일 꿀팁", day_html)
         self.assertIn("4일차 당일 꿀팁", html.split('id="day4"', 1)[1].split('id="playground"', 1)[0])
+
+    def test_day_four_includes_bilingual_festival_and_parking_warning(self):
+        for filename, title, parking in (
+            ("index.html", "나하 대줄다리기 축제 · 교통·주차 안내", "숙소 전용 주차장 없음"),
+            ("ja.html", "那覇大綱挽まつり · 交通・駐車案内", "宿に専用駐車場なし"),
+        ):
+            html = Path(filename).read_text(encoding="utf-8")
+            day_four = html.split('id="day4"', 1)[1].split('</section>', 1)[0]
+            summaries = re.findall(r'<summary>(.*?)</summary>', day_four)
+
+            self.assertGreaterEqual(len(summaries), 3)
+            self.assertEqual(summaries[2], f"🚧 {title}")
+            self.assertIn(parking, day_four)
+            self.assertIn("17:15~20:30", day_four)
+            self.assertIn("10:15~13:00", day_four)
+            self.assertIn("13:10~18:00", day_four)
+            self.assertIn("https://www.naha-navi.or.jp/magazine/2026/09/49306/", day_four)
 
     def test_bilingual_pages_share_schedule_sources_and_sections(self):
         pages = [Path(name).read_text(encoding="utf-8") for name in ("index.html", "ja.html")]
