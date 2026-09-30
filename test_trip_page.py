@@ -68,7 +68,7 @@ class TripPageTest(unittest.TestCase):
             "성인 2명 · 택시로 공항",
             "아이 사이드 플랜",
             "예상 비용",
-            "¥163,380~203,380",
+            "¥130,880~170,880",
         ):
             self.assertIn(text, html)
         for removed in ("류큐무라", "네오파크 오키나와", "시사이드 드라이브인", "어린이왕국"):
@@ -110,7 +110,7 @@ class TripPageTest(unittest.TestCase):
         html = Path("index.html").read_text(encoding="utf-8")
 
         for text in (
-            "잠정 일정",
+            "잠정 해양 일정",
             "https://www.jma.go.jp/bosai/forecast/",
             "https://www.jma.go.jp/bosai/warning/",
             "https://www.data.jma.go.jp/waveinf/",
@@ -158,7 +158,7 @@ class TripPageTest(unittest.TestCase):
             self.assertIn('04:25', days[1])
             self.assertIn('12,500', days[1])
             self.assertIn('¥22,880', html)
-            self.assertIn('¥163,380~203,380', html)
+            self.assertIn('¥130,880~170,880', html)
             self.assertNotIn('13:50', html)
             for n, origin, destination, waypoints in (
                 (2, 'リザンシーパークホテル谷茶ベイ 沖縄県国頭郡恩納村谷茶1496',
@@ -215,7 +215,7 @@ class TripPageTest(unittest.TestCase):
             self.assertIn(option_title, html)
             self.assertNotIn(removed, html)
 
-    def test_day_two_lunch_is_conditional_on_tour_checkin(self):
+    def test_day_two_uses_personal_snorkeling_without_a_tour(self):
         html = Path("index.html").read_text(encoding="utf-8")
         day_two = html.split('id="day2"', 1)[1].split('id="day3"', 1)[0]
 
@@ -223,11 +223,13 @@ class TripPageTest(unittest.TestCase):
             "모토부·세소코 방향 점심",
             "12:30 식사 종료",
             "13:00",
-            "집합 시간",
-            "오후 투어",
+            "지정 유영구역",
+            "개인 장비",
         ):
             self.assertIn(text, day_two)
         self.assertLess(day_two.index("<strong>츄라우미 수족관"), day_two.index("<strong>모토부·세소코 방향 점심"))
+        self.assertNotIn("투어 집합", day_two)
+        self.assertNotIn("스노클 투어 · 성인 5명", html)
         self.assertNotIn("정규 일정에는 이동과 대기 시간이 부족해 넣지 않습니다", html)
 
     def test_recent_review_tips_are_attached_to_each_day(self):
@@ -288,7 +290,8 @@ class TripPageTest(unittest.TestCase):
             self.assertEqual(len(re.findall(r'id="[^"]+"', html)), len(parser.ids))
             self.assertTrue(parser.viewport)
             self.assertFalse(parser.external_assets)
-            self.assertIn("¥45,000", html)
+            self.assertIn("¥130,880", html)
+            self.assertNotIn("¥45,000", html)
             self.assertIn("https://taruboublog.com/sesoko-beach/", html)
             self.assertNotIn("9/26 예보 기준", html)
             for href in parser.hrefs:
