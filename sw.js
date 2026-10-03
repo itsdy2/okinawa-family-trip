@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'okinawa-trip-';
-const CACHE_NAME = `${CACHE_PREFIX}v8`;
+const CACHE_NAME = `${CACHE_PREFIX}v9`;
 const SHELL = [
   './index.html',
   './ja.html',

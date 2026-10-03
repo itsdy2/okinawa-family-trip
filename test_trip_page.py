@@ -72,7 +72,7 @@ class TripPageTest(unittest.TestCase):
             "¥129,500~169,500",
         ):
             self.assertIn(text, html)
-        for removed in ("류큐무라", "네오파크 오키나와", "시사이드 드라이브인", "어린이왕국"):
+        for removed in ("네오파크 오키나와", "시사이드 드라이브인", "어린이왕국"):
             self.assertNotIn(removed, html)
 
     def test_visit_japan_web_guide_includes_family_and_hotel_example(self):
