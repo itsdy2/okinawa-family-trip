@@ -69,7 +69,7 @@ class TripPageTest(unittest.TestCase):
             "성인 2명 · 택시로 공항",
             "아이 사이드 플랜",
             "예상 비용",
-            "¥130,880~170,880",
+            "¥129,500~169,500",
         ):
             self.assertIn(text, html)
         for removed in ("류큐무라", "네오파크 오키나와", "시사이드 드라이브인", "어린이왕국"):
@@ -159,7 +159,7 @@ class TripPageTest(unittest.TestCase):
             self.assertIn('04:25', days[1])
             self.assertIn('12,500', days[1])
             self.assertIn('¥22,880', html)
-            self.assertIn('¥130,880~170,880', html)
+            self.assertIn('¥129,500~169,500', html)
             self.assertNotIn('13:50', html)
             for n, origin, destination, waypoints in (
                 (2, 'リザンシーパークホテル谷茶ベイ 沖縄県国頭郡恩納村谷茶1496',
@@ -175,7 +175,8 @@ class TripPageTest(unittest.TestCase):
                 (4, 'ホテルトーマス旭橋駅 沖縄県那覇市東町8-6',
                  '那覇空港 沖縄県那覇市鏡水150',
                  ['波上宮 沖縄県那覇市若狭1-25-11',
-                  'ジャッキーステーキハウス 沖縄県那覇市西1-7-3']),
+                  'ジャッキーステーキハウス 沖縄県那覇市西1-7-3',
+                  '155-13 Tagami, Tomigusuku, Okinawa']),
             ):
                 parser = TripPageParser()
                 parser.feed(days[n])
@@ -291,7 +292,7 @@ class TripPageTest(unittest.TestCase):
             self.assertEqual(len(re.findall(r'id="[^"]+"', html)), len(parser.ids))
             self.assertTrue(parser.viewport)
             self.assertFalse(parser.external_assets)
-            self.assertIn("¥130,880", html)
+            self.assertIn("¥129,500", html)
             self.assertNotIn("¥45,000", html)
             self.assertIn("https://taruboublog.com/sesoko-beach/", html)
             self.assertNotIn("9/26 예보 기준", html)
